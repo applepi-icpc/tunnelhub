@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -12,6 +13,8 @@ import (
 )
 
 var (
+	flagListen = flag.String("listen", ":5555", "Address to listen on")
+
 	connections = make(map[string]net.Conn)
 	actives     = make(map[string]net.Conn)
 	mu          sync.Mutex
@@ -107,7 +110,9 @@ func handle(conn net.Conn) {
 }
 
 func main() {
-	server, err := net.Listen("tcp", ":5555")
+	flag.Parse()
+
+	server, err := net.Listen("tcp", *flagListen)
 	if err != nil {
 		log.Panicf("error listening: %v", err)
 	}
