@@ -67,8 +67,9 @@ func handle(conn net.Conn) {
 		mu.Lock()
 		client, ok := connections[token]
 		if !ok {
-			fmt.Fprintf(client, "token not found")
 			mu.Unlock()
+			fmt.Fprintf(conn, "token not found")
+			conn.Close()
 			return
 		}
 		delete(connections, token)
@@ -79,30 +80,11 @@ func handle(conn net.Conn) {
 			client.Close()
 		}
 
-		server, err := net.Listen("tcp", "")
-		if err != nil {
-			fmt.Fprintf(conn, "cannot create listener: %v", err)
-			return
-		}
-		fmt.Fprintf(conn, "listening: %v", server.Addr())
-		tokenserver := fmt.Sprintf("%s:%d <==> %s", token, port, server.Addr().String())
-		mu.Lock()
-		actives[tokenserver] = client
-		mu.Unlock()
 		go func() {
-			defer server.Close()
-			conn, err := server.Accept()
-			if err != nil {
-				return
-			}
-			go io.Copy(conn, client)
-			go func() {
-				io.Copy(client, conn)
-				mu.Lock()
-				delete(actives, token)
-				mu.Unlock()
-			}()
+			io.Copy(client, conn)
+			client.Close()
 		}()
+		io.Copy(conn, client)
 		conn.Close()
 	default:
 		conn.Close()
