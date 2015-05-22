@@ -54,24 +54,37 @@ func handle(conn net.Conn) {
 
 	case "CONNECT":
 		if len(parts) < 3 {
-			fmt.Fprintf(conn, "usage: CONNECT token port")
+			fmt.Fprintf(conn, "usage: CONNECT prefix port\n")
 			return
 		}
-		token := parts[1]
+		prefix := parts[1]
 		port, err := strconv.Atoi(parts[2])
 		if err != nil {
-			fmt.Fprintf(conn, "error parsing port: %v", err)
+			fmt.Fprintf(conn, "error parsing port: %v\n", err)
 			return
 		}
 
 		mu.Lock()
-		client, ok := connections[token]
-		if !ok {
+		var token string
+		for t := range connections {
+			if strings.HasPrefix(t, prefix) {
+				if token != "" {
+					fmt.Fprintf(conn, "ambiguous prefix: %s.\n", prefix)
+					conn.Close()
+					return
+				} else {
+					token = t
+
+				}
+			}
+		}
+		if token == "" {
 			mu.Unlock()
-			fmt.Fprintf(conn, "token not found")
+			fmt.Fprintf(conn, "token not found\n")
 			conn.Close()
 			return
 		}
+		client := connections[token]
 		delete(connections, token)
 		mu.Unlock()
 
