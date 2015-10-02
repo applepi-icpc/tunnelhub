@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"time"
 )
 
 var (
@@ -21,6 +22,8 @@ func main() {
 	check(err)
 	_, err = fmt.Fprintf(conn, "connect %s %d\n", *flagKey, *flagPort)
 	check(err)
+	// sleep for a second, to make sure previous command has been flushed.
+	time.Sleep(time.Second)
 	go func() {
 		io.Copy(conn, os.Stdin)
 		conn.Close()
