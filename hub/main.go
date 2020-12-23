@@ -39,6 +39,7 @@ func handle(conn net.Conn) {
 		connections[parts[1]] = conn
 		mu.Unlock()
 		log.Println("SUBCRIBED", parts[1])
+
 	case "LIST":
 		mu.Lock()
 		fmt.Fprintf(conn, "SUBSCRIBERS:\n")
@@ -99,6 +100,7 @@ func handle(conn net.Conn) {
 		}()
 		io.Copy(conn, client)
 		conn.Close()
+
 	default:
 		conn.Close()
 	}
